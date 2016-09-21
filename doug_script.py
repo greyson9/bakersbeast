@@ -44,3 +44,16 @@ plt.savefig('doug_figure.png', bbox_inches='tight')
 
 pickle.dump(a, open('doug_array.pkl', 'w'))
 
+###################################################
+
+frequencies = [0 for k in range(77)]
+
+b = a.sum(axis=0)
+
+plt.clf()
+plt.plot(b)
+plt.xlabel('residue #')
+plt.ylabel('# of mutants in library')
+plt.xlim(0,76)
+plt.savefig('doug_figure2.png', bbox_inches='tight')
+
