@@ -30,6 +30,8 @@ for i in range(len(ub)):
 	for key in ub[i]:
 		a[amino_to_number[key],i] = ub[i][key]
 
+print a
+
 plt.figure(figsize=(12,6))
 plt.imshow(a, interpolation='nearest', aspect='auto')
 plt.colorbar()
