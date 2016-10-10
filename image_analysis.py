@@ -18,6 +18,8 @@ import skimage.feature as feature
 import skimage.filters as filters
 import skimage.io as io
 import skimage.exposure as exposure
+import skimage.segmentation as seg
+from os import listdir
 
 
 def double_otsu(img, bins):
@@ -57,33 +59,42 @@ def double_otsu(img, bins):
 				t2 = j
 	return 1.0 * t1 / bins, 1.0 * t2 / bins
 
+
 def normalize(img):
 	high = np.amax(img)
 	low = np.amin(img)
 	return (img - low) / (high - low)
 
 
-stack = nd2r.Nd2('/Users/student/Projects/PlateImages/Plate000_WellC01_Seq0000.nd2')
+stack = nd2r.Nd2('/Users/student/Projects/PlateImages/Plate000_WellF08_Seq0040.nd2')
 test = stack[4].astype(np.float64) / np.amax(stack[4])
-strong_blur = filters.gaussian(test, 20)
-no_back = test - strong_blur
+cy3 = stack[3].astype(np.float64) / np.amax(stack[3])
+dapi = stack[0].astype(np.float64) / np.amax(stack[0])
+
+
+def find_cells(img):
+	strong_blur = filters.gaussian(img, 20)
+	no_back = img - strong_blur
+	no_back = normalize(no_back)
+	equalized_no_back = exposure.equalize_hist(no_back)
+	equalized_no_back = normalize(equalized_no_back)
+	edges_nb = feature.canny(equalized_no_back, sigma=5)
+	close_nb = ndi.binary_closing(edges_nb, structure=np.ones((3, 3)), iterations=1)
+	fill_close_nb = ndi.binary_fill_holes(close_nb)
+	open_fcnb = ndi.binary_opening(fill_close_nb, structure=np.ones((10, 10)))
+	open_bigger = ndi.morphology.binary_dilation(open_fcnb, iterations=5)
+	border = morph.binary_dilation(open_fcnb) - open_fcnb
+	dist = ndi.distance_transform_edt(open_fcnb)
+	local_peaks = feature.peak_local_max(dist, min_distance=12, threshold_abs=4,
+											labels=open_fcnb, indices=False)
+	markers = ndi.label(local_peaks)[0]
+	labels = morph.watershed(-dist, markers, mask=open_bigger)
+	find_boundaries = seg.find_boundaries(labels)
+	return labels
+
+strong_blur = filters.gaussian(dapi, 20)
+no_back = dapi - strong_blur
 no_back = normalize(no_back)
-equalized_no_back = exposure.equalize_hist(no_back)
-equalized_no_back = normalize(equalized_no_back)
-edges_nb = feature.canny(equalized_no_back, sigma=4)
-close_nb = ndi.binary_closing(edges_nb, structure=np.ones((3, 3)), iterations=1)
-fill_close_nb = ndi.binary_fill_holes(close_nb)
-open_fcnb = ndi.binary_opening(fill_close_nb, structure=np.ones((10, 10)))
-border = morph.binary_dilation(open_fcnb) - open_fcnb
-dist = ndi.distance_transform_cdt(open_fcnb, metric='chessboard')
-dist_bins = np.amax(dist)
-# dist = normalize(dist)
-local_peaks = feature.peak_local_max(dist, min_distance=3, threshold_abs=2,
-										labels=open_fcnb, indices=False)
-hist, bin_edges = np.histogram(dist.flatten(), bins=dist_bins)
-dist_otsu = filters.threshold_otsu(dist)
-markers = ndi.label(local_peaks)[0]
-labels = morph.watershed(-dist, markers, mask=no_back)
 # print(local_peaks)
 # laplace = filters.scharr(no_back)
 # laplace = (laplace - np.amin(laplace)) / (np.amax(laplace) - np.amin(laplace))
@@ -105,8 +116,11 @@ labels = morph.watershed(-dist, markers, mask=no_back)
 # print(u)
 # print((int)(u * 1000.0), (int)(v * 1000.0))
 # filt_real, filt_imag = filters.gabor(test, frequency=0.8)
-plt.figure()
-io.imshow(labels)
+# plt.figure()
+# io.imshow(labels)
+# io.imshow(dapi)
+# io.imshow(find_boundaries, alpha=0.3)
+# io.imshow(border, alpha=0.3)
 # plt.figure()
 # sns.barplot(x=bin_edges[1:-1], y=hist[1:])
 # plt.axvline(x=(int)(1000.0 * otsu), color='k', linestyle='--')
@@ -114,7 +128,7 @@ io.imshow(labels)
 # plt.axvline(x=(int)(v * 1000.0), color='k', linestyle='--')
 # plt.figure()
 # io.imshow(border)
-io.show()
+# io.show()
 '''
 # no_back = no_back - np.amin(no_back)
 print(np.amin(no_back))
