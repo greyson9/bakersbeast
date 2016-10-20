@@ -1,13 +1,18 @@
 # barcode_quant.py
 
 # To read csv, use command df = pd.read_csv(fn, index_col=['pos','aa'/'cod'])
-# To generate table for heatmap, use df_e0 = df['e0_slope'].reset_index().pivot('pos', 'aa')
-# df_e0.columns = df_e0.columns.droplevel()
+
+# e0 is day 1, e1 is day 2, and c0 is the control. These are the *expts*
+# *cqs* are the calculated quantities: slope (relative fitness), r (correlation coefficient),
+# p (not clear on its meaning in this context), stde (standard error)
+#
+# To generate a heatmap for a given quantity, use the following code:
+# df_*expt* = df['*expt*_	*cq*'].reset_index().pivot('pos', 'aa')
+# df_*expt*.columns = df_*expt*.columns.droplevel()
 # df_e0 = df_e0.T
-# sns.heatmap(df_e0, vmin=-0.6, vmax=0.6) # vmin/vmax are the min and max of the colorbar
+# sns.heatmap(df_*expt*, vmin=-0.6, vmax=0.6) # vmin/vmax are the min and max of the colorbar
 # plt.xticks(rotation=90)
 # plt.show()
-
 import gzip
 import itertools
 import sys
