@@ -1,6 +1,6 @@
 # barcode_quant.py
 
-# To read csv, use command df = pd.read_csv(fn, index_col=['pos','aa'/'cod'])
+# To read csv, use command df = pd.read_csv(fn, index_col=['pos','aa'/'codon'])
 
 # e0 is day 1, e1 is day 2, and c0 is the control. These are the *expts*
 # *cqs* are the calculated quantities: slope (relative fitness), r (correlation coefficient),
@@ -9,7 +9,10 @@
 # To generate a heatmap for a given quantity, use the following code:
 # df_*expt* = df['*expt*_	*cq*'].reset_index().pivot('pos', 'aa')
 # df_*expt*.columns = df_*expt*.columns.droplevel()
-# df_e0 = df_e0.T
+# df_*expt* = df_*expt*.T
+# To rename labels of codon df to include amino acid, use:
+# cod_*expt*.index = cod_*expt*.index.map(lambda x: translate[x] + '-' + x if x in translate else x)
+# cod_*expt*.sort_index(inplace=True)
 # sns.heatmap(df_*expt*, vmin=-0.6, vmax=0.6) # vmin/vmax are the min and max of the colorbar
 # plt.xticks(rotation=90)
 # plt.show()
@@ -123,6 +126,7 @@ def count_barcodes_hamming(filename):
 			# so check to see if barcode has been added
 			else:
 				samples[(seq, index)] += 1.0
+
 		return samples
 # now, convert this into codon reads and amino acid reads
 # the fitness score is defined as k_mut / k_wt
@@ -189,3 +193,105 @@ def fitness_scores(input):
 	df_aa.to_csv('aas.csv')
 	return df_cod, df_aa
 cod, aa = fitness_scores(count_barcodes(fn))
+
+
+def gen_figures_aa(df):
+	# prepare fitness heatmap data
+	aa_e0_fitness = df['e0_slope'].reset_index().pivot('pos', 'aa')
+	aa_e0_fitness.columns = aa_e0_fitness.columns.droplevel()
+	aa_e0_fitness = aa_e0_fitness.T
+	aa_e1_fitness = df['e1_slope'].reset_index().pivot('pos', 'aa')
+	aa_e1_fitness.columns = aa_e1_fitness.columns.droplevel()
+	aa_e1_fitness = aa_e1_fitness.T
+	aa_c0_fitness = df['c0_slope'].reset_index().pivot('pos', 'aa')
+	aa_c0_fitness.columns = aa_c0_fitness.columns.droplevel()
+	aa_c0_fitness = aa_c0_fitness.T
+
+	#calculate and prepare r^2 heatmap data
+	df['e0_r2'] = df['e0_r'] ** 2
+	aa_e0_r2 = df['e0_r2'].reset_index().pivot('pos', 'aa')
+	aa_e0_r2.columns = aa_e0_r2.columns.droplevel()
+	aa_e0_r2 = aa_e0_r2.T
+	df['e1_r2'] = df['e1_r'] ** 2
+	aa_e1_r2 = df['e1_r2'].reset_index().pivot('pos', 'aa')
+	aa_e1_r2.columns = aa_e1_r2.columns.droplevel()
+	aa_e1_r2 = aa_e1_r2.T
+	df['c0_r2'] = df['c0_r'] ** 2
+	aa_c0_r2 = df['c0_r2'].reset_index().pivot('pos', 'aa')
+	aa_c0_r2.columns = aa_c0_r2.columns.droplevel()
+	aa_c0_r2 = aa_c0_r2.T
+
+	# generate and save heatmaps
+	for u in [(aa_e0_fitness, 'Expt 1 AA Fitness'), (aa_e1_fitness, 'Expt 2 AA Fitness'),
+				(aa_c0_fitness, 'Control AA Fitness')]:
+		plt.figure(figsize=(16, 10))
+		sns.heatmap(u[0], vmin=-0.6, vmax=0.6, cmap='seismic') # vmin/vmax are the min and max of the colorbar
+		plt.xticks(rotation=90)
+		plt.yticks(rotation=0)
+		plt.suptitle(u[1], size=30)
+		plt.savefig(u[1] + '.png', dpi=500)
+		plt.close()
+
+	for u in [(aa_e0_r2, 'Expt 1 AA R-Squared'), (aa_e1_r2, 'Expt 2 AA R-Squared'),
+		(aa_c0_r2, 'Control AA R-Squared')]:
+		plt.figure(figsize=(16, 10))
+		sns.heatmap(u[0], vmin=-0.0, vmax=1.0, cmap='seismic') # vmin/vmax are the min and max of the colorbar
+		plt.xticks(rotation=90)
+		plt.yticks(rotation=0)
+		plt.suptitle(u[1], size=30)
+		plt.savefig(u[1] + '.png', dpi=500)
+		plt.close()
+
+def gen_figures_codon(df):
+	# prepare fitness heatmap data
+	codon_e0_fitness = df['e0_slope'].reset_index().pivot('pos', 'codon')
+	codon_e0_fitness.columns = codon_e0_fitness.columns.droplevel()
+	codon_e0_fitness = codon_e0_fitness.T
+	codon_e0_fitness.index = codon_e0_fitness.index.map(lambda x: translate[x] + '-' + x if x in translate else '_' + x)
+	codon_e1_fitness = df['e1_slope'].reset_index().pivot('pos', 'codon')
+	codon_e1_fitness.columns = codon_e1_fitness.columns.droplevel()
+	codon_e1_fitness = codon_e1_fitness.T
+	codon_e1_fitness.index = codon_e1_fitness.index.map(lambda x: translate[x] + '-' + x if x in translate else '_' + x)
+	codon_c0_fitness = df['c0_slope'].reset_index().pivot('pos', 'codon')
+	codon_c0_fitness.columns = codon_c0_fitness.columns.droplevel()
+	codon_c0_fitness = codon_c0_fitness.T
+	codon_c0_fitness.index = codon_c0_fitness.index.map(lambda x: translate[x] + '-' + x if x in translate else '_' + x)
+
+	#calculate and prepare r^2 heatmap data
+	df['e0_r2'] = df['e0_r'] ** 2
+	codon_e0_r2 = df['e0_r2'].reset_index().pivot('pos', 'codon')
+	codon_e0_r2.columns = codon_e0_r2.columns.droplevel()
+	codon_e0_r2 = codon_e0_r2.T
+	codon_e0_r2.index = codon_e0_r2.index.map(lambda x: translate[x] + '-' + x if x in translate else '_' + x)
+	df['e1_r2'] = df['e1_r'] ** 2
+	codon_e1_r2 = df['e1_r2'].reset_index().pivot('pos', 'codon')
+	codon_e1_r2.columns = codon_e1_r2.columns.droplevel()
+	codon_e1_r2 = codon_e1_r2.T
+	codon_e1_r2.index = codon_e1_r2.index.map(lambda x: translate[x] + '-' + x if x in translate else '_' + x)
+	df['c0_r2'] = df['c0_r'] ** 2
+	codon_c0_r2 = df['c0_r2'].reset_index().pivot('pos', 'codon')
+	codon_c0_r2.columns = codon_c0_r2.columns.droplevel()
+	codon_c0_r2 = codon_c0_r2.T
+	codon_c0_r2.index = codon_c0_r2.index.map(lambda x: translate[x] + '-' + x if x in translate else '_' + x)
+
+
+	# generate and save heatmaps
+	for u in [(codon_e0_fitness, 'Expt 1 Codon Fitness'), (codon_e1_fitness, 'Expt 2 Codon Fitness'),
+				(codon_c0_fitness, 'Control Codon Fitness')]:
+		plt.figure(figsize=(16, 10))
+		sns.heatmap(u[0], vmin=-0.6, vmax=0.6, cmap='seismic') # vmin/vmax are the min and max of the colorbar
+		plt.xticks(rotation=90)
+		plt.yticks(rotation=0)
+		plt.suptitle(u[1], size=30)
+		plt.savefig(u[1] + '.png', dpi=500)
+		plt.close()
+
+	for u in [(codon_e0_r2, 'Expt 1 Codon R-Squared'), (codon_e1_r2, 'Expt 2 Codon R-Squared'),
+			(codon_c0_r2, 'Control Codon R-Squared')]:
+		plt.figure(figsize=(16, 10))
+		sns.heatmap(u[0], vmin=-0.0, vmax=1.0, cmap='seismic') # vmin/vmax are the min and max of the colorbar
+		plt.xticks(rotation=90)
+		plt.yticks(rotation=0)
+		plt.suptitle(u[1], size=30)
+		plt.savefig(u[1] + '.png', dpi=500)
+		plt.close()
