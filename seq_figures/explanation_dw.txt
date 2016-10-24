@@ -1,0 +1,22 @@
+This document explains how I processed the data to make the sequence-related figures, and
+how to interpret each of the figures.
+
+The first figure is a scatterplot comparing the fitness scores between two groups (exp1,
+exp2, or control). These fitness scores are the ones calculated by the slope of the
+regression line from aas.csv or codons.csv and are already normalized to wt growth rates.
+Points lying on the diagonal show no difference in fitness between the two groups and
+points far from the diagonal show a large difference.
+
+The next figure is a histogram of the difference in fitness between the two groups.
+Because the fitness scores were already normalized using a natural log in their 
+calculation, to get a normal distribution here, we simply subtract the fitness score under
+one condition from the fitness score under the other condition. We see a normal
+distribution centered on approximately 0. I have overlaid a normal distribution with the
+same mean and standard deviation over the histogram and marked 3 sd from the mean with
+dotted lines.
+
+Finally, I plotted the standard deviations from the mean of the difference in fitness
+scores. For each mutant where mean is the average difference in fitness between the two
+conditions and sd is the standard deviation of that calculation: ((e1-e0) - mean) / sd
+When plotted, this shows us mutants who's fitness varies greatly between the two
+conditions of interest.
