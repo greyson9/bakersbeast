@@ -8,7 +8,7 @@ sns.set()
 # import data
 data = pd.read_csv('aas.csv')
 
-dataset1 = 'e1'
+dataset1 = 'e0'
 dataset2 = 'c0'
 
 
@@ -30,8 +30,11 @@ plt.ylabel(dataset2)
 plt.axis([-2,2,-2,2])
 plt.savefig('seq_figures/scatter_' + dataset1 + '_' + dataset2 + '.png')
 
-plt.close()
+# for i in range(len(a)):
+# 	if data['aa'][i] == 'STOP':
+# 		plt.plot(a[i],b[i], 'yo')
 
+# plt.show()
 
 # histogram and distribution of ratios
 cutoff = 3
@@ -66,7 +69,7 @@ plt.figure(figsize=(10,10), dpi=600)
 plt.plot(sd, 'ro')
 axes = plt.gca()
 plt.xlabel('mutant')
-plt.ylabel('standard deviations from mean')
+plt.ylabel('standard deviations from mean (%s - %s' % (dataset1, dataset2))
 plt.plot(axes.get_xlim(),(cutoff,cutoff), '--k')
 plt.plot(axes.get_xlim(),(-cutoff,-cutoff), '--k')
 
